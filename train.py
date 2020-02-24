@@ -346,11 +346,18 @@ def main():
     compression = hvd.Compression.fp16 if opts.fp16_allreduce else hvd.Compression.none
 
     # Horovod: wrap optimizer with DistributedOptimizer.
-    optimizer = hvd.DistributedOptimizer(
+    try:
+        optimizer = hvd.DistributedOptimizer(
         optimizer, named_parameters=model.named_parameters(),
         compression=compression,
         backward_passes_per_step=opts.batches_per_allreduce,
         op=hvd.Adasum if opts.use_adasum else hvd.Average)
+    except:
+        optimizer = hvd.DistributedOptimizer(
+        optimizer, named_parameters=model.named_parameters(),
+        compression=compression,
+        backward_passes_per_step=opts.batches_per_allreduce
+
     
     # Restore from a previous checkpoint, if initial_epoch is specified.
     # Horovod: restore on the first worker which will broadcast weights to other workers.
