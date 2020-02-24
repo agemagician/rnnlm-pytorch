@@ -343,14 +343,14 @@ def main():
         raise ValueError( """An invalid option for `--optim_type` was supplied.""")
         
     # Horovod: (optional) compression algorithm.
-    compression = hvd.Compression.fp16 if args.fp16_allreduce else hvd.Compression.none
+    compression = hvd.Compression.fp16 if opts.fp16_allreduce else hvd.Compression.none
 
     # Horovod: wrap optimizer with DistributedOptimizer.
     optimizer = hvd.DistributedOptimizer(
         optimizer, named_parameters=model.named_parameters(),
         compression=compression,
-        backward_passes_per_step=args.batches_per_allreduce,
-        op=hvd.Adasum if args.use_adasum else hvd.Average)
+        backward_passes_per_step=opts.batches_per_allreduce,
+        op=hvd.Adasum if opts.use_adasum else hvd.Average)
     
     # Restore from a previous checkpoint, if initial_epoch is specified.
     # Horovod: restore on the first worker which will broadcast weights to other workers.
