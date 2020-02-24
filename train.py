@@ -127,7 +127,7 @@ def evaluate(opts, device, corpus, model, criterion, epoch):
             output_flat = output.view(-1, output.shape[2])
             # target_flat: LongTensor of token_ids [seq_len*batch_size]
             #total_loss += criterion(output_flat, target_flat).item()
-             val_loss.update(criterion(output_flat, target_flat).item())
+            val_loss.update(criterion(output_flat, target_flat).item())
             total_num = batch_id + 1
     #total_loss /= total_num
     total_loss = val_accuracy.avg.item()
