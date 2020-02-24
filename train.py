@@ -359,6 +359,8 @@ def main():
         backward_passes_per_step=opts.batches_per_allreduce
 
     
+    # I need to fix that later
+    '''
     # Restore from a previous checkpoint, if initial_epoch is specified.
     # Horovod: restore on the first worker which will broadcast weights to other workers.
     if (resume_from_epoch > 0) and (hvd.rank() == 0) :
@@ -367,7 +369,8 @@ def main():
         checkpoint = torch.load(filepath)
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
-
+    '''
+            
     # Horovod: broadcast parameters & optimizer state.
     hvd.broadcast_parameters(model.state_dict(), root_rank=0)
     hvd.broadcast_optimizer_state(optimizer, root_rank=0)
