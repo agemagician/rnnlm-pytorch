@@ -253,10 +253,10 @@ def main():
     
     hvd.init()
     
-    if args.cuda:
+    if opts.cuda:
         # Horovod: pin GPU to local rank.
         torch.cuda.set_device(hvd.local_rank())
-        torch.cuda.manual_seed(args.seed)
+        #torch.cuda.manual_seed(opts.seed)
     
     cudnn.benchmark = True
     
