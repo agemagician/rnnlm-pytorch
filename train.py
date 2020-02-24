@@ -11,6 +11,7 @@ import data
 import models
 
 import horovod.torch as hvd
+import torch.backends.cudnn as cudnn
 
 def options():
     parser = argparse.ArgumentParser(description='PyTorch RNN/LSTM Language Model')
