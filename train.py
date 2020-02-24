@@ -226,7 +226,7 @@ class Metric(object):
 def save_params(params):
     if hvd.rank() == 0:
         with open(opts.save + ".params", mode='wb') as f:
-        pickle.dump(params, f)
+            pickle.dump(params, f)
     
 def save_checkpoint(model, optimizer,epoch):
     if hvd.rank() == 0:
