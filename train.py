@@ -10,6 +10,8 @@ import pickle
 import data
 import models
 
+import horovod.torch as hvd
+
 def options():
     parser = argparse.ArgumentParser(description='PyTorch RNN/LSTM Language Model')
     parser.add_argument('--data', type=str, default='./dataset',
@@ -72,6 +74,16 @@ def options():
                     help='prefix to save the final model')
     parser.add_argument('--dict', type=str, default='./models/dict.pkl',
                     help='path to (save/load) the dictionary')
+    
+    parser.add_argument('--fp16-allreduce', action='store_true', default=False,
+                    help='use fp16 compression during allreduce')
+    #parser.add_argument('--batches-per-allreduce', type=int, default=1,
+    #                help='number of batches processed locally before '
+    #                     'executing allreduce across workers; it multiplies '
+    #                     'total batch size.')
+    parser.add_argument('--use-adasum', action='store_true', default=False,
+                    help='use adasum algorithm to do reduction')
+
     opts = parser.parse_args()
     return opts
 
@@ -193,6 +205,15 @@ def main():
     opts = options()
     # Set the random seed manually for reproducibility.
     torch.manual_seed(opts.seed)
+    
+    hvd.init()
+    
+    if args.cuda:
+        # Horovod: pin GPU to local rank.
+        torch.cuda.set_device(hvd.local_rank())
+        torch.cuda.manual_seed(args.seed)
+    
+    cudnn.benchmark = True
 
     ###############################################################################
     # Load data
