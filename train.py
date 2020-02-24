@@ -77,12 +77,15 @@ def options():
     
     parser.add_argument('--fp16-allreduce', action='store_true', default=False,
                     help='use fp16 compression during allreduce')
-    #parser.add_argument('--batches-per-allreduce', type=int, default=1,
-    #                help='number of batches processed locally before '
-    #                     'executing allreduce across workers; it multiplies '
-    #                     'total batch size.')
+    parser.add_argument('--batches-per-allreduce', type=int, default=1,
+                    help='number of batches processed locally before '
+                         'executing allreduce across workers; it multiplies '
+                         'total batch size.')
     parser.add_argument('--use-adasum', action='store_true', default=False,
                     help='use adasum algorithm to do reduction')
+    
+    #parser.add_argument('--checkpoint-format', default='./checkpoint-{epoch}.pth.tar',
+    #                help='checkpoint file format')
 
     opts = parser.parse_args()
     return opts
@@ -104,7 +107,8 @@ def evaluate(opts, device, corpus, model, criterion, epoch):
     epoch_start_time = time.time()
     # Turn on evaluation mode which disables dropout.
     model.eval()
-    total_loss = 0.0
+    #total_loss = 0.0
+    val_loss = Metric('val_loss')
     # Do not back propagation
     with torch.no_grad():
         for batch_id, batch in enumerate(data.data2batch(corpus.valid, corpus.dictionary, opts.batch_size, flag_shuf=True)):
@@ -122,16 +126,19 @@ def evaluate(opts, device, corpus, model, criterion, epoch):
             # output_flat: LongTensor of token_ids [seq_len*batch_size, ntoken]
             output_flat = output.view(-1, output.shape[2])
             # target_flat: LongTensor of token_ids [seq_len*batch_size]
-            total_loss += criterion(output_flat, target_flat).item()
+            #total_loss += criterion(output_flat, target_flat).item()
+             val_loss.update(criterion(output_flat, target_flat).item())
             total_num = batch_id + 1
-    total_loss /= total_num
-    print('-' * 89)
-    try:
-        print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
-            'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time), total_loss, math.exp(total_loss)))
-    except:
-        print("Warning: math error")
-    print('-' * 89)
+    #total_loss /= total_num
+    total_loss = val_accuracy.avg.item()
+    if verbose == 1:
+        print('-' * 89)
+        try:
+            print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
+                'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time), total_loss, math.exp(total_loss)))
+        except:
+            print("Warning: math error")
+        print('-' * 89)
     return total_loss
 
 def train(opts, device, corpus, model, criterion, optimizer, lr, epoch):
@@ -149,7 +156,8 @@ def train(opts, device, corpus, model, criterion, optimizer, lr, epoch):
     """
     # Turn on training mode which enables dropout.
     model.train()
-    total_loss = 0.
+    #total_loss = 0.
+    train_loss = Metric('train_loss')
     start_time = time.time()
     for batch_id, batch in enumerate(data.data2batch(corpus.train, corpus.dictionary, opts.batch_size, flag_shuf=True)):
         # Starting each batch, we detach the hidden state from how it was previously produced.
@@ -184,18 +192,54 @@ def train(opts, device, corpus, model, criterion, optimizer, lr, epoch):
         """
         optimizer.step()
         optimizer.zero_grad()
-        total_loss += loss.item()
+        #total_loss += loss.item()
+        train_loss.update(loss)
         
         if batch_id % opts.log_interval == 0 and batch_id > 0:
-            cur_loss = total_loss / opts.log_interval
+            #cur_loss = total_loss / opts.log_interval
+            cur_loss = train_loss.avg.item()
             elapsed = time.time() - start_time
-            print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
+            if verbose == 1:
+                print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
                     'loss {:5.2f} | ppl {:8.2f}'.format(
                 epoch, batch_id, len(corpus.train) // opts.batch_size, lr,
                 elapsed * 1000 / opts.log_interval, cur_loss, math.exp(cur_loss)))
-            total_loss = 0
+            #total_loss = 0
             start_time = time.time()
 
+# Horovod: average metrics from distributed training.
+class Metric(object):
+    def __init__(self, name):
+        self.name = name
+        self.sum = torch.tensor(0.)
+        self.n = torch.tensor(0.)
+
+    def update(self, val):
+        self.sum += hvd.allreduce(val.detach().cpu(), name=self.name)
+        self.n += 1
+
+    @property
+    def avg(self):
+        return self.sum / self.n
+
+    
+def save_params(params):
+    if hvd.rank() == 0:
+        with open(opts.save + ".params", mode='wb') as f:
+        pickle.dump(params, f)
+    
+def save_checkpoint(model, optimizer,epoch):
+    if hvd.rank() == 0:
+        epoch = epoch + 1
+        #filepath = args.checkpoint_format.format(epoch=epoch + 1)
+        #filepath = args.checkpoint_format.format(epoch=epoch)
+        filepath = opts.save + "checkpoint-" + str(epoch) + ".pth.tar"
+        state = {
+            'model': model.state_dict(),
+            'optimizer': optimizer.state_dict(),
+        }
+        torch.save(state, filepath)
+        
 def main():
 
     ###############################################################################
@@ -214,6 +258,22 @@ def main():
         torch.cuda.manual_seed(args.seed)
     
     cudnn.benchmark = True
+    
+    # Horovod: print logs on the first worker.
+    global verbose = 1 if hvd.rank() == 0 else 0
+    
+    # If set > 0, will resume training from a given checkpoint.
+    resume_from_epoch = 0
+    for try_epoch in range(args.epochs, 0, -1):
+        filepath = opts.save + "checkpoint-" + str(epoch) + ".pth.tar"
+        if os.path.exists(filepath):
+            resume_from_epoch = try_epoch
+            break
+
+    # Horovod: broadcast resume_from_epoch from rank 0 (which will have
+    # checkpoints) to other ranks.
+    resume_from_epoch = hvd.broadcast(torch.tensor(resume_from_epoch), root_rank=0,
+                                      name='resume_from_epoch').item()
 
     ###############################################################################
     # Load data
@@ -250,8 +310,9 @@ def main():
         model.freeze_emb()
 
     # save parameters
-    with open(opts.save + ".params", mode='wb') as f:
-        pickle.dump(params, f)
+    #with open(opts.save + ".params", mode='wb') as f:
+    #    pickle.dump(params, f)
+    save_params(params)
     
     if torch.cuda.is_available():
         if not opts.cuda:
@@ -278,15 +339,40 @@ def main():
         optimizer = getattr(torch.optim, opts.optim_type)(model.parameters(), lr=lr)
     except:
         raise ValueError( """An invalid option for `--optim_type` was supplied.""")
+        
+    # Horovod: (optional) compression algorithm.
+    compression = hvd.Compression.fp16 if args.fp16_allreduce else hvd.Compression.none
+
+    # Horovod: wrap optimizer with DistributedOptimizer.
+    optimizer = hvd.DistributedOptimizer(
+        optimizer, named_parameters=model.named_parameters(),
+        compression=compression,
+        backward_passes_per_step=args.batches_per_allreduce,
+        op=hvd.Adasum if args.use_adasum else hvd.Average)
+    
+    # Restore from a previous checkpoint, if initial_epoch is specified.
+    # Horovod: restore on the first worker which will broadcast weights to other workers.
+    if resume_from_epoch > 0 and hvd.rank() == 0:
+        filepath = opts.save + "checkpoint-" + str(resume_from_epoch) + ".pth.tar"
+        #filepath = args.checkpoint_format.format(epoch=resume_from_epoch)
+        checkpoint = torch.load(filepath)
+        model.load_state_dict(checkpoint['model'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+
+    # Horovod: broadcast parameters & optimizer state.
+    hvd.broadcast_parameters(model.state_dict(), root_rank=0)
+    hvd.broadcast_optimizer_state(optimizer, root_rank=0)
 
     # At any point you can hit Ctrl + C to break out of training early.
     try:
-        for epoch in range(1, opts.epochs+1):
+        for epoch in range(resume_from_epoch, opts.epochs):
             train(opts, device, corpus, model, criterion, optimizer, lr, epoch)
             val_loss = evaluate(opts, device, corpus, model, criterion, epoch)
+            save_checkpoint(epoch)
             # Save the model if the validation loss is the best we've seen so far.
             if not best_val_loss or val_loss < best_val_loss:
-                torch.save(model.state_dict(), opts.save + ".pt")
+                #torch.save(model.state_dict(), opts.save + ".pt")
+                save_checkpoint(-1)
                 best_val_loss = val_loss
             else:
                 # Anneal the learning rate if no improvement has been seen in the validation dataset.
