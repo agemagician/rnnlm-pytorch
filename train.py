@@ -245,6 +245,7 @@ def main():
     ###############################################################################
     # Load command line options.
     ###############################################################################
+    global verbose
     
     opts = options()
     # Set the random seed manually for reproducibility.
@@ -260,7 +261,7 @@ def main():
     cudnn.benchmark = True
     
     # Horovod: print logs on the first worker.
-    global verbose = 1 if hvd.rank() == 0 else 0
+    verbose = 1 if hvd.rank() == 0 else 0
     
     # If set > 0, will resume training from a given checkpoint.
     resume_from_epoch = 0
