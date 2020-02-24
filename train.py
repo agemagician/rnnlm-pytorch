@@ -267,7 +267,7 @@ def main():
     # If set > 0, will resume training from a given checkpoint.
     resume_from_epoch = 0
     for try_epoch in range(opts.epochs, 0, -1):
-        filepath = opts.save + "checkpoint-" + str(epoch) + ".pth.tar"
+        filepath = opts.save + "checkpoint-" + str(try_epoch) + ".pth.tar"
         if os.path.exists(filepath):
             resume_from_epoch = try_epoch
             break
