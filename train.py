@@ -224,9 +224,9 @@ class Metric(object):
         return self.sum / self.n
 
     
-def save_params(params):
+def save_params(params,savePath):
     if hvd.rank() == 0:
-        with open(opts.save + ".params", mode='wb') as f:
+        with open(savePath + ".params", mode='wb') as f:
             pickle.dump(params, f)
     
 def save_checkpoint(model, optimizer,epoch):
@@ -314,7 +314,7 @@ def main():
     # save parameters
     #with open(opts.save + ".params", mode='wb') as f:
     #    pickle.dump(params, f)
-    save_params(params)
+    save_params(params,opts.save)
     
     if torch.cuda.is_available():
         if not opts.cuda:
