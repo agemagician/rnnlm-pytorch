@@ -361,7 +361,7 @@ def main():
     
     # Restore from a previous checkpoint, if initial_epoch is specified.
     # Horovod: restore on the first worker which will broadcast weights to other workers.
-    if resume_from_epoch > 0 and hvd.rank() == 0:
+    if (resume_from_epoch > 0) and (hvd.rank() == 0) :
         filepath = opts.save + "checkpoint-" + str(resume_from_epoch) + ".pth.tar"
         #filepath = args.checkpoint_format.format(epoch=resume_from_epoch)
         checkpoint = torch.load(filepath)
