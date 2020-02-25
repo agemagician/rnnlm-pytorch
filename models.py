@@ -289,12 +289,12 @@ class RNNModel(nn.Module):
         ----------
         emb: The shape of this value depends on self.prm["wo_tok"] and self.prm["wo_char"]
         """
-        if self.prm["wo_char"]:
+        if self.prm["wo_tok"]:
             # emb: [seq_len*nbatch, char_hid]
             emb = self.drop(self.char_encoder(input["char"]))
             # emb: [seq_len, nbatch, char_hid]
             emb = emb.reshape(input["word"].shape[0], input["word"].shape[1], -1)
-        elif self.prm["wo_tok"]:
+        elif self.prm["wo_char"]:
             # emb: [seq_len, nbatch, tok_emb]
             emb = self.drop(self.word_encoder(input["word"]))
         elif self.prm["wo_tok"] and self.prm["wo_char"]:
