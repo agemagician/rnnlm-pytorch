@@ -164,6 +164,7 @@ def train(opts, device, corpus, model, criterion, optimizer, lr, epoch):
         # Starting each batch, we detach the hidden state from how it was previously produced.
         # If we didn't, the model would try backpropagating all the way to start of the dataset.
         # batch[0].shape[1]: nbatch, hidden: [nlayer, nbatch, nhid]
+        print(batch)
         hidden = model.init_hidden(batch)
         # Cut the computation graph (Initialize)
         hidden = models.repackage_hidden(hidden)
@@ -174,6 +175,7 @@ def train(opts, device, corpus, model, criterion, optimizer, lr, epoch):
         # clear previous gradients
         model.zero_grad()
         # output: [seq_len, nbatch, ntoken], hidden: [nlayer, nbatch, nhid]
+        print(input)
         output, hidden = model(input, hidden)
         # output_flat: LongTensor of token_ids [seq_len*batch_size, ntoken]
         output_flat = output.view(-1, output.shape[2])
