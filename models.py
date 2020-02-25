@@ -228,7 +228,7 @@ class RNNModel(nn.Module):
         else:
             self.emb_dim = prm["tok_emb"] + prm["char_hid"]
         self.word_encoder = nn.Embedding(prm["tok_len"], prm["tok_emb"])
-        self.char_encoder = CNNCharEmb(prm)
+        #self.char_encoder = CNNCharEmb(prm)
         if prm["direction"] == "both":
             bidirectional = True
             self.decoder = nn.Linear(prm["tok_hid"]*2, prm["tok_len"])
@@ -273,7 +273,7 @@ class RNNModel(nn.Module):
         """
         init_range = self.prm["init_range"]
         self.word_encoder.weight.data.uniform_(-init_range, init_range)
-        self.char_encoder.encoder.weight.data.uniform_(-init_range, init_range)
+        #self.char_encoder.encoder.weight.data.uniform_(-init_range, init_range)
         self.decoder.bias.data.zero_()
         self.decoder.weight.data.uniform_(-init_range, init_range)
 
@@ -289,12 +289,12 @@ class RNNModel(nn.Module):
         ----------
         emb: The shape of this value depends on self.prm["wo_tok"] and self.prm["wo_char"]
         """
-        if self.prm["wo_tok"]:
+        if self.prm["wo_char"]:
             # emb: [seq_len*nbatch, char_hid]
             emb = self.drop(self.char_encoder(input["char"]))
             # emb: [seq_len, nbatch, char_hid]
             emb = emb.reshape(input["word"].shape[0], input["word"].shape[1], -1)
-        elif self.prm["wo_char"]:
+        elif self.prm["wo_tok"]:
             # emb: [seq_len, nbatch, tok_emb]
             emb = self.drop(self.word_encoder(input["word"]))
         elif self.prm["wo_tok"] and self.prm["wo_char"]:
