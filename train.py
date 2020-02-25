@@ -131,7 +131,7 @@ def evaluate(opts, device, corpus, model, criterion, epoch):
             val_loss.update(criterion(output_flat, target_flat))
             total_num = batch_id + 1
     #total_loss /= total_num
-    total_loss = val_accuracy.avg.item()
+    total_loss = val_loss.avg.item()
     if verbose == 1:
         print('-' * 89)
         try:
@@ -164,7 +164,7 @@ def train(opts, device, corpus, model, criterion, optimizer, lr, epoch):
         # Starting each batch, we detach the hidden state from how it was previously produced.
         # If we didn't, the model would try backpropagating all the way to start of the dataset.
         # batch[0].shape[1]: nbatch, hidden: [nlayer, nbatch, nhid]
-        print(batch)
+        #print(batch)
         hidden = model.init_hidden(batch)
         # Cut the computation graph (Initialize)
         hidden = models.repackage_hidden(hidden)
