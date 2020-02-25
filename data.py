@@ -123,7 +123,7 @@ class Corpus(object):
         assert os.path.exists(path)
         with open(path, 'r', encoding="utf8", errors='ignore') as f:
             for line in f:
-                words = ["<s>"] + line.split() + ["</s>"]
+                words = ["<s>"] + line.split(' ') + ["</s>"]
                 if len(words) > self.args.max_length:
                     continue
                 for word in words:
@@ -136,7 +136,7 @@ class Corpus(object):
         sent_ids = []
         with open(path, 'r', encoding="utf8", errors='ignore') as f:
             for line in f:
-                words = ["<s>"] + line.split() + ["</s>"]
+                words = ["<s>"] + line.split(' ') + ["</s>"]
                 if max_length > 0  and len(words) > max_length:
                     continue
                 sent_ids.append(self.sent2ids(words))
