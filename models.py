@@ -195,19 +195,24 @@ class CNNCharEmb(nn.Module):
         ----------
         emb: [seq_len*nbatch, char_hid]
         """
+        print(input)
         # char_emb: [seq_len*nbatch, token_len, char_emb]
         char_emb = self.drop(self.encoder(input))
         list_pooled = []
+        print('start conv')
         """ calculate convoluted hidden states of every kernel """
         for ksz in range(self.prm["char_kmin"], self.prm["char_kmax"]+1):
             # print(char_emb.shape)
             conved = self.conv_layers[ksz - 1](char_emb.permute(0,2,1))
             # print(conved.shape)
             list_pooled.append(F.max_pool1d(conved,kernel_size=conved.shape[1]).squeeze(2))
+        print('start pool')
         # pooled: [seq_len*nbatch, char_hid]
         pooled = torch.cat(list_pooled, dim=1)
+        print('start tanh')
         # word_emb: [seq_len*nbatch, char_hid]
         word_emb = torch.tanh(self.fullcon_layer(pooled))
+        print('finished')
         return word_emb
 
 class RNNModel(nn.Module):
