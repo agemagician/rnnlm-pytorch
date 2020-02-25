@@ -384,7 +384,7 @@ def main():
             # Save the model if the validation loss is the best we've seen so far.
             if not best_val_loss or val_loss < best_val_loss:
                 #torch.save(model.state_dict(), opts.save + ".pt")
-                save_checkpoint(-1)
+                save_checkpoint(model,optimizer,-1)
                 best_val_loss = val_loss
             else:
                 # Anneal the learning rate if no improvement has been seen in the validation dataset.
