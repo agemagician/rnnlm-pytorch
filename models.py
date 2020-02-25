@@ -200,9 +200,9 @@ class CNNCharEmb(nn.Module):
         list_pooled = []
         """ calculate convoluted hidden states of every kernel """
         for ksz in range(self.prm["char_kmin"], self.prm["char_kmax"]+1):
-            # print(char_emb.shape)
+            print(char_emb.shape)
             conved = self.conv_layers[ksz - 1](char_emb.permute(0,2,1))
-            # print(conved.shape)
+            print(conved.shape)
             list_pooled.append(F.max_pool1d(conved,kernel_size=conved.shape[1]).squeeze(2))
         # pooled: [seq_len*nbatch, char_hid]
         pooled = torch.cat(list_pooled, dim=1)
