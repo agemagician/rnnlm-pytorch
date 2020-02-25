@@ -228,7 +228,8 @@ class RNNModel(nn.Module):
         else:
             self.emb_dim = prm["tok_emb"] + prm["char_hid"]
         self.word_encoder = nn.Embedding(prm["tok_len"], prm["tok_emb"])
-        #self.char_encoder = CNNCharEmb(prm)
+        if not self.prm["wo_char"]:
+            self.char_encoder = CNNCharEmb(prm)
         if prm["direction"] == "both":
             bidirectional = True
             self.decoder = nn.Linear(prm["tok_hid"]*2, prm["tok_len"])
@@ -273,7 +274,8 @@ class RNNModel(nn.Module):
         """
         init_range = self.prm["init_range"]
         self.word_encoder.weight.data.uniform_(-init_range, init_range)
-        #self.char_encoder.encoder.weight.data.uniform_(-init_range, init_range)
+        if not self.prm["wo_char"]:
+            self.char_encoder.encoder.weight.data.uniform_(-init_range, init_range)
         self.decoder.bias.data.zero_()
         self.decoder.weight.data.uniform_(-init_range, init_range)
 
