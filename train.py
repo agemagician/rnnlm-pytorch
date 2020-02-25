@@ -175,7 +175,7 @@ def train(opts, device, corpus, model, criterion, optimizer, lr, epoch):
         # clear previous gradients
         model.zero_grad()
         # output: [seq_len, nbatch, ntoken], hidden: [nlayer, nbatch, nhid]
-        print(input)
+        #print(input)
         output, hidden = model(input, hidden)
         # output_flat: LongTensor of token_ids [seq_len*batch_size, ntoken]
         output_flat = output.view(-1, output.shape[2])
@@ -380,7 +380,7 @@ def main():
         for epoch in range(resume_from_epoch, opts.epochs):
             train(opts, device, corpus, model, criterion, optimizer, lr, epoch)
             val_loss = evaluate(opts, device, corpus, model, criterion, epoch)
-            save_checkpoint(epoch)
+            save_checkpoint(model,optimizer,epoch)
             # Save the model if the validation loss is the best we've seen so far.
             if not best_val_loss or val_loss < best_val_loss:
                 #torch.save(model.state_dict(), opts.save + ".pt")
