@@ -87,7 +87,10 @@ class ResRNNBase(nn.Module):
             # output: [seq_len, nbatch, nhid], hidden: [1, nbatch, nhid] or ([1, nbatch, nhid], [1, nbatch, nhid])
             rnn_out, hidden = rnn(rnn_out, init_hidden)
             # residual connection
-            rnn_out = rnn_out + res_out
+            if layer_id == 0:
+                rnn_out = rnn_out
+            else:
+                rnn_out = rnn_out + res_out
             # dropout
             if layer_id < len(self.rnns) - 1:
                 rnn_out = self.drop(rnn_out)
@@ -127,7 +130,10 @@ class ResRNNBase(nn.Module):
             # output: [seq_len, nbatch, nhid], hidden: [1, nbatch, nhid] or ([1, nbatch, nhid], [1, nbatch, nhid])
             forward_rnn_out, forward_rnn_hidden = forward_rnn(forward_rnn_out, forward_init_hidden)
             forward_hidden_list.append(forward_rnn_hidden)
-            forward_rnn_out = self.drop(forward_rnn_out) + forward_res_out
+            if layer_id == 0:
+                forward_rnn_out = self.drop(forward_rnn_out)
+            else:
+                forward_rnn_out = self.drop(forward_rnn_out) + forward_res_out
         """ Shift the forward hidden states. """
         forward_rnn_out = torch.cat([torch.zeros(1, forward_rnn_out.shape[1], forward_rnn_out.shape[2], device=forward_rnn_out.device), forward_rnn_out[:-1]], 0)
 
@@ -138,7 +144,10 @@ class ResRNNBase(nn.Module):
             backward_rnn = self.backward_rnns[layer_id]
             # output: [seq_len, nbatch, nhid], hidden: [1, nbatch, nhid] or ([1, nbatch, nhid], [1, nbatch, nhid])
             backward_rnn_out, backward_rnn_hidden = backward_rnn(backward_rnn_out, backward_init_hidden)
-            backward_rnn_out = self.drop(backward_rnn_out) + backward_res_out
+            if layer_id == 0:
+                backward_rnn_out = self.drop(backward_rnn_out)
+            else:
+                backward_rnn_out = self.drop(backward_rnn_out) + backward_res_out
         """ Reverse the order of hidden states """
         backward_rnn_out = torch.flip(backward_rnn_out, [0])
         """ Shift the backward hidden states """
