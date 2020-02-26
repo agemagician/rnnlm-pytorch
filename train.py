@@ -241,7 +241,7 @@ def save_checkpoint(model, optimizer,epoch):
             'model': model.state_dict(),
             'optimizer': optimizer.state_dict(),
         }
-        print(filepath)
+        #print(filepath)
         try:
             torch.save(state, filepath)
         except Exception as e:
@@ -386,10 +386,10 @@ def main():
             val_loss = evaluate(opts, device, corpus, model, criterion, epoch)
             save_checkpoint(model,optimizer,epoch)
             # Save the model if the validation loss is the best we've seen so far.
-            #if not best_val_loss or val_loss < best_val_loss:
-            #    #torch.save(model.state_dict(), opts.save + ".pt")
-            #    save_checkpoint(model,optimizer,-1)
-            #    best_val_loss = val_loss
+            if not best_val_loss or val_loss < best_val_loss:
+                #torch.save(model.state_dict(), opts.save + ".pt")
+                save_checkpoint(model,optimizer,-1)
+                best_val_loss = val_loss
             #else:
             #    # Anneal the learning rate if no improvement has been seen in the validation dataset.
             #    lr /= 4.0
