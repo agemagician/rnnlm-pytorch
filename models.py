@@ -118,9 +118,9 @@ class ResRNNBase(nn.Module):
         #print(len(self.backward_rnns))
         #print(len(init_hidden_list))
         #print((self.forward_rnns.shape))
-        print((init_hidden_list.shape))  
-        assert(len(self.forward_rnns) == len(init_hidden_list))
-        assert(len(self.backward_rnns) == len(init_hidden_list))
+        #print((init_hidden_list.shape))  
+        #assert(len(self.forward_rnns) == len(init_hidden_list))
+        #assert(len(self.backward_rnns) == len(init_hidden_list))
 
         emb = self.drop(emb)
         forward_rnn_out = emb
