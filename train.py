@@ -252,7 +252,7 @@ def main():
     ###############################################################################
     # Load command line options.
     ###############################################################################
-    global verbose
+    global verbose,opts
     
     opts = options()
     # Set the random seed manually for reproducibility.
