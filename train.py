@@ -39,7 +39,7 @@ def options():
                     help='number of hidden units of the token level rnn layer')
     parser.add_argument('--char_hid', type=int, default=50,
                     help='number of hidden units of the character level rnn layer')
-    parser.add_argument('--nlayers', type=int, default=2,
+    parser.add_argument('--nlayers', type=int, default=4,
                     help='number of layers')
     parser.add_argument('--optim_type', type=str, default='SGD',
                     help='type of the optimizer')
