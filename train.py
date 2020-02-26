@@ -380,7 +380,7 @@ def main():
         for epoch in range(resume_from_epoch, opts.epochs):
             train(opts, device, corpus, model, criterion, optimizer, lr, epoch)
             val_loss = evaluate(opts, device, corpus, model, criterion, epoch)
-            #save_checkpoint(model,optimizer,epoch)
+            save_checkpoint(model,optimizer,epoch)
             # Save the model if the validation loss is the best we've seen so far.
             #if not best_val_loss or val_loss < best_val_loss:
             #    #torch.save(model.state_dict(), opts.save + ".pt")
