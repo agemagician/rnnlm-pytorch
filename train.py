@@ -245,8 +245,8 @@ def save_checkpoint(model, optimizer,epoch):
         }
         #print(filepath)
         try:
-            if not os.path.exists(opts.save):
-                os.makedirs(opts.save)
+            print(opts.save)
+            os.makedirs(opts.save, exist_ok=True)
             torch.save(state, filepath)
         except Exception as e:
             print(e)
