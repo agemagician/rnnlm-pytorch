@@ -67,6 +67,8 @@ def options():
                     help='random seed')
     parser.add_argument('--cuda', action='store_true',
                     help='use CUDA')
+    parser.add_argument('--lms', action='store_true',
+                    help='use CUDA')
     parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='report interval')
     parser.add_argument('--pretrain', type=str, default='',
@@ -257,7 +259,7 @@ def main():
     opts = options()
     # Set the random seed manually for reproducibility.
     torch.manual_seed(opts.seed)
-    
+        
     hvd.init()
     
     if opts.cuda:
@@ -269,6 +271,11 @@ def main():
     
     # Horovod: print logs on the first worker.
     verbose = 1 if hvd.rank() == 0 else 0
+    
+    if opts.lms == True:
+        torch.cuda.set_enabled_lms(True)
+        if verbose == True:
+            print('LMS is enabled')
     
     # If set > 0, will resume training from a given checkpoint.
     resume_from_epoch = 0
