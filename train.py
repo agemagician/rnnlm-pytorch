@@ -230,7 +230,8 @@ class Metric(object):
     
 def save_params(params,savePath):
     if hvd.rank() == 0:
-        with open(savePath + ".params", mode='wb') as f:
+        os.makedirs(opts.save, exist_ok=True)
+        with open(savePath + "model.params", mode='wb') as f:
             pickle.dump(params, f)
     
 def save_checkpoint(model, optimizer,epoch):
@@ -245,7 +246,7 @@ def save_checkpoint(model, optimizer,epoch):
         }
         #print(filepath)
         try:
-            print(opts.save)
+            #print(opts.save)
             os.makedirs(opts.save, exist_ok=True)
             torch.save(state, filepath)
         except Exception as e:
