@@ -241,7 +241,11 @@ def save_checkpoint(model, optimizer,epoch):
             'model': model.state_dict(),
             'optimizer': optimizer.state_dict(),
         }
-        torch.save(state, filepath)
+        print(filepath)
+        try:
+            torch.save(state, filepath)
+        except Exception as e:
+            print(e)
         
 def main():
 
